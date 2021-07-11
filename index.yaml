@@ -3,10 +3,10 @@ entries:
   mysql:
   - apiVersion: v2
     appVersion: 8.0.1
-    created: "2021-07-11T17:49:45.250314538+02:00"
+    created: "2021-07-11T18:24:23.554182215+02:00"
     description: Fast, reliable, scalable, and easy to use open-source relational
       database system.
-    digest: f682f68987cc58a771002a781ddeae57ce97b503dbc22de18e0e1f4626524b70
+    digest: f7dffe821c0681133c6beb79ad9719383ad76057a6762d17f2a7b0874ebd5c25
     home: https://ppacific.github.io/helm-chart-mysql/
     icon: https://www.mysql.com/common/logos/logo-mysql-170x115.png
     keywords:
@@ -22,6 +22,6 @@ entries:
     - https://github.com/ppacific/helm-chart-mysql
     type: application
     urls:
-    - https://ppacific.github.io/helm-chart-mysql/mysql-1.0.0.tgz
+    - https://github.com/ppacific/helm-chart-mysql/archive/refs/tags/v1.0.0.tar.gz/mysql-1.0.0.tgz
     version: 1.0.0
-generated: "2021-07-11T17:49:45.24798505+02:00"
+generated: "2021-07-11T18:24:23.550999338+02:00"
