@@ -6,7 +6,7 @@ A [Helm](https://helm.sh/) repositorie with MySQL charts to be installed on [Kub
 To install the repo just run:
 
 ```
-helm repo add ppacific-mysql https://ppacific.github.io/helm-chart-mysql/
+helm repo add ppacific https://ppacific.github.io/helm-chart-mysql/
 helm repo update
 ```
 
@@ -15,5 +15,5 @@ helm repo update
 * [MySQL](https://ppacific.github.io/helm-chart-mysql/)
 
 ```
-helm install my-release ppacific-mysql
+helm install my-release ppacific/mysql
 ```
