@@ -1,5 +1,5 @@
 # Helm Charts
-A [Helm](https://helm.sh/) repositorie with MySQL charts to be installed on [Kubernetes](https://kubernetes.io/)
+[Helm](https://helm.sh/) repo with custom charts which can be installed on [Kubernetes](https://kubernetes.io/)
 
 ## Add Helm repository
 
