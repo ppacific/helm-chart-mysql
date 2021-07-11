@@ -1,0 +1,15 @@
+{{- if .Values.db.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "mysql.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: "{{ template "mysql.name" . }}"
+    chart: "{{ template "mysql.chart" . }}"
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+data:
+  my.cnf: |-
+{{ .Values.db.config | indent 4 }}
+{{- end -}}

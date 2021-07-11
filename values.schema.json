@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "properties": {
+    "rootUser": {
+      "type": "object",
+      "properties": {
+        "password": {
+          "type": "string",
+          "title": "MySQL admin password",
+          "form": true,
+          "description": "Defaults to a random 10-character alphanumeric string if not set",
+          "hidden": {
+            "value": false,
+            "path": "usePassword"
+          }
+        }
+      }
+    },
+    "db": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "MySQL custom database",
+          "description": "Name of the custom database to be created during the 1st initialization of MySQL",
+          "form": true
+        },
+        "user": {
+          "type": "string",
+          "title": "MySQL custom user",
+          "description": "Name of the custom user to be created during the 1st initialization of MySQL. This user only has permissions on the MySQL custom database",
+          "form": true
+        },
+        "password": {
+          "type": "string",
+          "title": "Password for MySQL custom user",
+          "form": true,
+          "description": "Defaults to a random 10-character alphanumeric string if not set",
+          "hidden": {
+            "value": false,
+            "path": "usePassword"
+         }
+       }
+     }
+   }
+  }
+}

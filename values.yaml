@@ -1,0 +1,293 @@
+## Global image parameters
+##
+# global:
+#   imageRegistry: myRegistryName
+#   imagePullSecrets:
+#     - myRegistryKeySecretName
+#   storageClass: myStorageClass
+
+## Mysql image
+## ref: https://catalog.redhat.com/software/containers/rhel8/mysql-80/5ba0ad4cdd19c70b45cbf48c
+##
+image:
+  registry: registry.redhat.io
+  repository: rhel8/mysql-80
+  tag: latest
+  ## Specify a imagePullPolicy
+  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  pullPolicy: IfNotPresent
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  #   - myRegistryKeySecretName
+
+## String to partially override mysql.fullname template (will maintain the release name)
+##
+# nameOverride:
+
+## String to fully override mysql.fullname template
+##
+# fullnameOverride:
+
+## Additional pod labels
+##
+# podLabels:
+# extraLabel: extraValue
+
+## Service
+##
+
+service:
+  ## Kubernetes service type, ClusterIP and NodePort are supported at present
+  type: ClusterIP
+  # clusterIp:
+  #   master: xx.xx.xx.xx
+  #   slave: xx.xx.xx.xx
+  port: 3306
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+  ##
+  # nodePort:
+  #   master: 30001
+  #   slave: 30002
+
+## Use existing secret (ignores root, db)
+##
+# existingSecret:
+
+## Allow customization of the secret resource
+##
+secret:
+ ## Require all passwords at the secret resource
+  ##
+  requirePasswords: true
+
+## MySQL admin credentials
+##
+rootUser:
+  ## MySQL admin password
+  ##
+  password: ""
+  ## Option to force users to specify a password. That is required for 'helm upgrade' to work properly.
+  ## If it is not force, a random password will be generated.
+  ##
+  forcePassword: false
+
+## Custom user/db credentials
+##
+db:
+  ## MySQL username and password
+  ##
+  user: "redhat"
+  password: "redhat"
+  ## Database to create
+  ##
+  name: redhat
+  ## Option to force users to specify a password. That is required for 'helm upgrade' to work properly.
+  ## If it is not force, a random password will be generated.
+  ##
+  forcePassword: false
+
+  ## MySQL additional pod annotations
+  ## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  # annotations:
+  #   key: value
+  #   another-key: another-value
+
+  ## Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ##
+  affinity: {}
+
+  ## Kept for backwards compatibility. You can now disable it by removing it.
+  ## if you wish to set it through master.affinity.podAntiAffinity instead.
+  ##
+  antiAffinity: soft
+
+  ## Node labels for pod assignment
+  ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+  ##
+  nodeSelector: {}
+
+  ## Tolerations for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations: []
+
+  ## updateStrategy for MySQL StatefulSet
+  ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+  updateStrategy:
+    type: RollingUpdate
+
+  ## Enable persistence using Persistent Volume Claims
+  ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
+  ##
+  persistence:
+    ## If true, use a Persistent Volume Claim, If false, use emptyDir
+    ##
+    enabled: true
+    # Enable persistence using an existing PVC
+    # existingClaim:
+    # Subdirectory of the volume to mount
+    # subPath:
+    mountPath: /var/lib/mysql/data
+    ## Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    ##
+    # storageClass: "-"
+    ## Persistent Volume Claim annotations
+    ##
+    annotations: {}
+    ## Persistent Volume Access Mode
+    ##
+    accessModes:
+      - ReadWriteOnce
+    ## Persistent Volume size
+    ##
+    size: 8Gi
+    ## selector can be used to match an existing PersistentVolume
+    ## selector:
+    ##   matchLabels:
+    ##     app: my-app
+    selector: {}
+
+  ## Configure MySQL with a custom my.cnf file
+  ## ref: https://mysql.com/kb/en/mysql/configuring-mysql-with-mycnf/#example-of-configuration-file
+  ##
+  config: |-
+    [mysqld]
+    
+    # Disabling symbolic-links is recommended to prevent assorted security risks
+    symbolic-links = 0
+    
+    # http://www.percona.com/blog/2008/05/31/dns-achilles-heel-mysql-installation/
+    skip_name_resolve
+    
+    datadir = /var/lib/mysql/data
+    basedir = /usr
+    plugin-dir = /usr/lib64/mysql/plugin
+    
+    # MySQL 8.0.4 introduced 'caching_sha2_password' as its default authentication plugin.
+    # It is faster and provides better security then the previous default authentication plugin.
+    #
+    # However, not all software implements this algorithm, and client applications might report
+    # issue like "The server requested authentication method"
+    #
+    # The plugin can be changed by setting default_authentication_plugin variable.
+    #
+    # The default_authentication_plugin options accepts these values:
+    # caching_sha2_password, mysql_native_password
+    #
+    # To change the behaviour back to the same behavior as MySQL 5.7 had, set the
+    # default_authentication_plugin variable to mysql_native_password.
+    #
+    # Upstream doc at https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html
+    
+    default_authentication_plugin=caching_sha2_password
+    
+    #
+    # Settings configured by the user
+    #
+    
+    # Sets how the table names are stored and compared. Default: 0
+    lower_case_table_names = 0
+    
+    # Sets whether queries should be logged
+    general_log      = 0
+    general_log_file = /var/lib/mysql/data/mysql-query.log
+    
+    # The maximum permitted number of simultaneous client connections. Default: 151
+    max_connections = 151
+    
+    # The minimum/maximum lengths of the word to be included in a FULLTEXT index. Default: 4/20
+    ft_min_word_len = 4
+    ft_max_word_len = 20
+    
+    # In case the native AIO is broken. Default: 1
+    # See http://help.directadmin.com/item.php?id=529
+    innodb_use_native_aio = 1
+    
+    key_buffer_size = 32M
+    max_allowed_packet = 200M
+    table_open_cache = 400
+    sort_buffer_size = 256K
+    read_buffer_size = 8M
+    read_rnd_buffer_size = 256K
+    net_buffer_length = 2K
+    thread_stack = 256K
+    myisam_sort_buffer_size = 2M
+    
+    # It is recommended that innodb_buffer_pool_size is configured to 50 to 75 percent of system memory.
+    innodb_buffer_pool_size = 32M
+    # Set .._log_file_size to 25 % of buffer pool size
+    innodb_log_file_size = 8M
+    innodb_log_buffer_size = 8M
+    
+    [myisamchk]
+    # The minimum/maximum lengths of the word to be included in a FULLTEXT index. Default: 4/20
+    #
+    # To ensure that myisamchk and the server use the same values for full-text
+    # parameters, we placed them in both sections.
+    ft_min_word_len = 4
+    ft_max_word_len = 20
+    
+    [mysqldump]
+    quick
+    max_allowed_packet = 16M
+    
+    [mysql]
+    no-auto-rehash
+
+  ## Configure master resource requests and limits
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  ##
+  resources: {}
+    # requests:
+    #   memory: "64Mi"
+    #   cpu: "250m"
+    # limits:
+    #   memory: "128Mi"
+    #   cpu: "500m"
+
+  ## Monitoring Application Health
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  ##
+  livenessProbe:
+    enabled: true
+    ##
+    ## Initializing the database could take some time
+    initialDelaySeconds: 120
+    ##
+    ## Default Kubernetes values
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    ##
+    ## Default Kubernetes values
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3
+
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+    # maxUnavailable: 1
+
+  ## Allow customization of the service resource
+  ##
+  service:
+    ## Add custom annotations to the service
+    ##
+    annotations: {}
+    #   external-dns.alpha.kubernetes.io/hostname: db.example.com
+

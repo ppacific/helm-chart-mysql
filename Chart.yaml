@@ -1,0 +1,19 @@
+apiVersion: v2
+appVersion: 8.0.1
+description: Fast, reliable, scalable, and easy to use open-source relational database
+  system.
+home: https://ppacific.github.io/helm-chart-mysql/
+icon: https://www.mysql.com/common/logos/logo-mysql-170x115.png
+keywords:
+- mysql
+- database
+- sql
+maintainers:
+- email: ppacific@redhat.com
+  name: ppacific
+  url: https://github.com/ppacific
+name: mysql
+sources:
+- https://github.com/ppacific/helm-chart-mysql
+type: application
+version: 1.0.0

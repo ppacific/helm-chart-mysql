@@ -1,0 +1,174 @@
+apiVersion: {{ template "mysql.statefulset.apiVersion" . }}
+kind: StatefulSet
+metadata:
+  name: {{ template "db.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "mysql.name" . }}
+    chart: {{ template "mysql.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- include "mysql.podLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  serviceName: {{ template "mysql.fullname" . }}
+  updateStrategy:
+    type: {{ .Values.db.updateStrategy.type }}
+    {{- if (eq "Recreate" .Values.db.updateStrategy.type) }}
+  rollingUpdate: null
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "mysql.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- if .Values.db.annotations }}
+      annotations: {{- include "mysql.tplValue" (dict "value" .Values.db.annotations "context" $) | nindent 8 }}
+      {{- end }}
+      labels:
+        app: {{ template "mysql.name" . }}
+        chart: {{ template "mysql.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        {{- include "mysql.podLabels" . | nindent 8 }}
+    spec:
+      {{- if eq .Values.db.antiAffinity "hard" }}
+      affinity:
+      {{- with .Values.db.affinity  }}
+{{ toYaml . | indent 8 }}
+      {{- end }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: "kubernetes.io/hostname"
+              labelSelector:
+                matchLabels:
+                  app: {{ template "mysql.name" . }}
+                  release: {{ .Release.Name }}
+      {{- else if eq .Values.db.antiAffinity "soft" }}
+      affinity:
+      {{- with .Values.db.affinity  }}
+{{ toYaml . | indent 8 }}
+      {{- end }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: {{ template "mysql.name" . }}
+                    release: {{ .Release.Name }}
+      {{- else}}
+      {{- with .Values.db.affinity }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- end }}
+      {{- if .Values.db.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.db.nodeSelector | nindent 8 }}
+      {{- end -}}
+      {{- with .Values.db.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: "mysql"
+          image:  {{ template "mysql.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-root-password
+                  name: {{ template "mysql.secretName" . }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-password
+                  name: {{ template "mysql.secretName" . }}
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-user
+                  name: {{ template "mysql.secretName" . }}
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  key: mysql-database
+                  name: {{ template "mysql.secretName" . }}
+          ports:
+            - name: mysql
+              containerPort: 3306
+          {{- if .Values.db.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - mysqladmin status -uroot
+            initialDelaySeconds: {{ .Values.db.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.db.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.db.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.db.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.db.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.db.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - mysqladmin status -uroot
+            initialDelaySeconds: {{ .Values.db.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.db.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.db.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.db.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.db.readinessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.db.resources }}
+          resources: {{ toYaml .Values.db.resources | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.db.persistence.mountPath }}
+              {{- if .Values.db.persistence.subPath }}
+              subPath: {{ .Values.db.persistence.subPath }}
+              {{- end }}
+            {{- if .Values.db.config }}
+            - name: config
+              mountPath: /etc/my.cnf
+              subPath: my.cnf
+            {{- end }}
+      volumes:
+        {{- if .Values.db.config }}
+        - name: config
+          configMap:
+            name: {{ template "db.fullname" . }}
+        {{- end }}
+{{- if and .Values.db.persistence.enabled .Values.db.persistence.existingClaim }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.db.persistence.existingClaim }}
+{{- else if not .Values.db.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+{{- else if and .Values.db.persistence.enabled (not .Values.db.persistence.existingClaim) }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          app: "{{ template "mysql.name" . }}"
+          release: {{ .Release.Name | quote }}
+          heritage: {{ .Release.Service | quote }}
+      spec:
+        accessModes:
+        {{- range .Values.db.persistence.accessModes }}
+          - {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.db.persistence.size | quote }}
+        {{ include "mysql.db.storageClass" . }}
+        {{- if .Values.db.persistence.selector }}
+        selector: {{- include "mysql.tplValue" (dict "value" .Values.db.persistence.selector "context" $) | nindent 10 }}
+        {{- end -}}
+{{- end }}
